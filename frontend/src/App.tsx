@@ -1,16 +1,12 @@
-import { use, useEffect, useState, useRef, Ref, HtmlHTMLAttributes } from 'react'
-import { ReactThreeFiber, useLoader, Canvas, useFrame, useThree } from '@react-three/fiber'
-import { TextureLoader, Texture, PlaneGeometry, MeshBasicMaterialParameters, Mesh, Material, MeshBasicMaterial, MathUtils, CanvasTexture, Group, Vector3 } from 'three'
+import { useEffect, useState, useRef } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { createRoot } from 'react-dom/client'
-import { Html, MeshReflectorMaterial, Text } from '@react-three/drei'
-import html2canvas from 'html2canvas'
+import { Html } from '@react-three/drei'
+//import html2canvas from 'html2canvas' // Part of the HTML to canvas and plane stuff that is useful but not being used
 import'./App.css'
-import { setQuaternionFromProperEuler } from 'three/src/math/MathUtils.js'
-import { BundleGroup } from 'three/webgpu'
-import { deltaTime, timerDelta } from 'three/tsl'
 
-const useDomToCanvas = (domEl:HTMLElement) => {
+// This is a function that converts HTML to a canvas texture but I'm not using it and Vite doesn't like that (I'll use it in the future)
+/*const useDomToCanvas = (domEl:HTMLElement) => {
 
   // The debounce function just waits for the specified amount of time before executing the callback
   function debounce(func:Function, timeout:number) {
@@ -22,7 +18,7 @@ const useDomToCanvas = (domEl:HTMLElement) => {
     }
   }
 
-  const [texture, setTexture] = useState<CanvasTexture>();
+  const [texture, setTexture] = useState<THREE.CanvasTexture>();
   
   // Define all the getters and shit
   useEffect(() => {
@@ -31,7 +27,7 @@ const useDomToCanvas = (domEl:HTMLElement) => {
     // Converts the html to a canvas on the side
     const convertDomToCanvas = async () => {
       const canvas = await html2canvas(domEl, { backgroundColor: null });
-      setTexture(new CanvasTexture(canvas));
+      setTexture(new THREE.CanvasTexture(canvas));
     };
     // Calls it
     convertDomToCanvas();
@@ -48,7 +44,7 @@ const useDomToCanvas = (domEl:HTMLElement) => {
   }, [domEl]);
 
   return texture;
-};
+};*/
 
 type song = {
   album: string,
@@ -61,7 +57,7 @@ type song = {
 function Album({imgUrl, ...props}:any) {
 
   // Loader for loading the album textures
-  const loader = new TextureLoader()
+  const loader = new THREE.TextureLoader()
     
   // Set up state for hovering and active states
   const [hovered, setHover] = useState(false)
@@ -71,16 +67,16 @@ function Album({imgUrl, ...props}:any) {
   const { mouse } = useThree()
 
   // Using a reference gives direct access to the mesh
-  const meshRef = useRef<Mesh>(null!)
+  const meshRef = useRef<THREE.Mesh>(null!)
   // Lets us update the texture since it needs the texture to be constant and local
-  const [albumTex, setTexture] = useState<Texture | null>(null)
+  const [albumTex, setTexture] = useState<THREE.Texture | null>(null)
 
   useEffect(() => {
 
     // Load the new texture every time the url is changed
     loader.load(imgUrl, (loadedTexture) => {
       setTexture(loadedTexture)
-      const material = meshRef.current.material as MeshBasicMaterial
+      const material = meshRef.current.material as THREE.MeshBasicMaterial
       material.needsUpdate = true
     })
 
@@ -88,10 +84,11 @@ function Album({imgUrl, ...props}:any) {
   }, [imgUrl])
 
   const [[positionX, positionY, positionZ], setPosition] = useState([0, 0, 0])
+  const [scale, setScale] = useState({x:5, y:5, z:5})
 
   const timer = useRef(0)
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     // In case the mesh isn't set yet
     if(!meshRef.current) return
 
@@ -100,12 +97,14 @@ function Album({imgUrl, ...props}:any) {
     const targetY = mouse.x * 0.3
 
     // Linearly interpolate towards the mouse (smooth movement just like your brain)
-    meshRef.current.rotation.x = MathUtils.lerp(meshRef.current.rotation.x, targetX, 0.1)
-    meshRef.current.rotation.y = MathUtils.lerp(meshRef.current.rotation.y, targetY, 0.1)
+    meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, targetX, 0.1)
+    meshRef.current.rotation.y = THREE.MathUtils.lerp(meshRef.current.rotation.y, targetY, 0.1)
 
     timer.current += delta * 10
-    console.log(timer)
-    setPosition([MathUtils.lerp(meshRef.current.position.x, mouse.x, 0.1), MathUtils.lerp(meshRef.current.position.y, mouse.y, 0.1), 0])
+
+    if(hovered) setScale({x:THREE.MathUtils.lerp(meshRef.current.scale.x, 6.5, 0.1), y:THREE.MathUtils.lerp(meshRef.current.scale.y, 6.5, 0.1), z:1})
+    else if ((scale.x !== meshRef?.current.scale.x) || (scale.y !== meshRef?.current.scale.y)) setScale({x:THREE.MathUtils.lerp(meshRef.current.scale.x, 6.5, 0.1), y:THREE.MathUtils.lerp(meshRef.current.scale.y, 6.5, 0.1), z:1})
+    setPosition([THREE.MathUtils.lerp(meshRef.current.position.x, mouse.x, 0), THREE.MathUtils.lerp(meshRef.current.position.y, mouse.y, 0), 0])
   })
 
   return (
@@ -113,22 +112,23 @@ function Album({imgUrl, ...props}:any) {
       {...props} // The properties passed automaticall
       ref={meshRef} // A reference to the object directly
       scale={active ? 1.5 : 1} // Scales it up if it's active
-      onClick={(event) => setActive(!active)} // Changes it's active state if it's clicked
-      onPointerOver={(event) => setHover(true)} // This and one below track hovering
-      onPointerOut={(event) => setHover(false)}
-      position={[positionX, positionY, 0]}>
-      <planeGeometry args={[5, 5]}/>
+      onClick={() => setActive(!active)} // Changes it's active state if it's clicked
+      onPointerOver={() => setHover(true)} // This and one below track hovering
+      onPointerOut={() => setHover(false)}
+      position={[positionX, positionY, positionZ]}>
+      <planeGeometry args={[5, 5, 1]}/>
       <meshBasicMaterial map={albumTex}/>
     </mesh>
   )
 }
 
-function domPlane({divRef, ...props}: {divRef:React.RefObject<HTMLElement>, props:any}) {
+// This function returns a react object that uses a DOM node as a texture on a plane, but I'm not surrently using it
+/*function domPlane({divRef, ...props}: {divRef:React.RefObject<HTMLElement>, props:any}) {
   if(divRef==null)return
   // Set a constant reference directly to the mesh for react to use
-  const meshRef = useRef<Mesh>(null!)
+  const meshRef = useRef<THREE.Mesh>(null!)
 
-  const [texture, setDomTexture] = useState<Texture | null>()
+  const [texture, setDomTexture] = useState<THREE.Texture | null>()
 
   useEffect(() => {
     setDomTexture(useDomToCanvas(divRef.current))
@@ -144,7 +144,7 @@ function domPlane({divRef, ...props}: {divRef:React.RefObject<HTMLElement>, prop
     </mesh>
   )
 
-}
+}*/
 
 function SearchUI3D({
   prediction,
@@ -160,9 +160,9 @@ function SearchUI3D({
 
   const time = useRef(0)
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     // Store the position vector
-    const vector = new Vector3();
+    const vector = new THREE.Vector3();
     // Get the vector from world position matrix
     vector.setFromMatrixPosition(groupRef.current.matrixWorld);
     // Project to da camera so we know where you are on the screen
@@ -203,11 +203,9 @@ function SearchUI3D({
 }
 
 const ProjectedInput = ({
-    prediction,
     songs,
     selectedSong,
     searchQuery,
-    screenPos,
     setSearchQuery,
     setSelectedSong,
     setImgUrl,
@@ -265,6 +263,7 @@ const ProjectedInput = ({
                 if(selectedSong?.id !== song.id) {
                   setImgUrl(song.images)
                   setSelectedSong(song)
+                  
                 }
               }}
               >
