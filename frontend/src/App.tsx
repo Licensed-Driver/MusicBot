@@ -100,18 +100,20 @@ function Album({imgUrl, ...props}:any) {
     meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, targetX, 0.1)
     meshRef.current.rotation.y = THREE.MathUtils.lerp(meshRef.current.rotation.y, targetY, 0.1)
 
-    timer.current += delta * 10
+    timer.current += delta
 
+    // If the album is hovered over it'll expand over time for a smooth interaction
     if(hovered) setScale({x:THREE.MathUtils.lerp(meshRef.current.scale.x, 6.5, 0.1), y:THREE.MathUtils.lerp(meshRef.current.scale.y, 6.5, 0.1), z:1})
     else if ((scale.x !== meshRef?.current.scale.x) || (scale.y !== meshRef?.current.scale.y)) setScale({x:THREE.MathUtils.lerp(meshRef.current.scale.x, 6.5, 0.1), y:THREE.MathUtils.lerp(meshRef.current.scale.y, 6.5, 0.1), z:1})
-    setPosition([THREE.MathUtils.lerp(meshRef.current.position.x, mouse.x, 0), THREE.MathUtils.lerp(meshRef.current.position.y, mouse.y, 0), 0])
+
+    setPosition([0, Math.sin(timer.current), 0])
   })
 
   return (
     <mesh
       {...props} // The properties passed automaticall
       ref={meshRef} // A reference to the object directly
-      scale={active ? 1.5 : 1} // Scales it up if it's active
+      scale={scale} // Scales it up if it's active
       onClick={() => setActive(!active)} // Changes it's active state if it's clicked
       onPointerOver={() => setHover(true)} // This and one below track hovering
       onPointerOut={() => setHover(false)}
