@@ -1,0 +1,37 @@
+# Python cache & virtualenv
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.env
+.venv/
+venv/
+ENV/
+env/
+
+# Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Secrets / environment variables
+.env
+*.env
+
+# Model and large data files
+*.pkl
+*.joblib
+*.h5
+*.csv
+*.json
+data/
+model/trained_model.*
+model/output/
+*.log
+
+# Streamlit or Flask temporary files
+.streamlit/
+*.db
+*.sqlite
+
+# System files
+.DS_Store
+Thumbs.db
