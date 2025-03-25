@@ -5,6 +5,11 @@ import { Html } from '@react-three/drei'
 //import html2canvas from 'html2canvas' // Part of the HTML to canvas and plane stuff that is useful but not being used
 import'./App.css'
 
+import {SpaceInfo} from './workers/rotation_worker'
+import rotationWorker from './workers/rotation_worker?worker'
+
+const rot_worker = new rotationWorker()
+
 // This is a function that converts HTML to a canvas texture but I'm not using it and Vite doesn't like that (I'll use it in the future)
 /*const useDomToCanvas = (domEl:HTMLElement) => {
 
@@ -82,9 +87,12 @@ function Album({imgUrl, ...props}:any) {
 
     console.log(imgUrl)
   }, [imgUrl])
-
-  const [[positionX, positionY, positionZ], setPosition] = useState([0, 0, 0])
-  const [scale, setScale] = useState({x:5, y:5, z:5})
+  
+  const [albumInfo, setAlbumInfo] = useState<SpaceInfo>({
+    rotation:{x:0, y:0, z:0},
+    position:{x:0, y:0, z:0},
+    scale:{x:1, y:1, z:1}
+  })
 
   const timer = useRef(0)
 
@@ -92,32 +100,30 @@ function Album({imgUrl, ...props}:any) {
     // In case the mesh isn't set yet
     if(!meshRef.current) return
 
-    // Get the x and y scaled down a lil
-    const targetX = mouse.y * -0.3
-    const targetY = mouse.x * 0.3
-
-    // Linearly interpolate towards the mouse (smooth movement just like your brain)
-    meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, targetX, 0.1)
-    meshRef.current.rotation.y = THREE.MathUtils.lerp(meshRef.current.rotation.y, targetY, 0.1)
-
     timer.current += delta
 
-    // If the album is hovered over it'll expand over time for a smooth interaction
-    if(hovered) setScale({x:THREE.MathUtils.lerp(meshRef.current.scale.x, 6.5, 0.1), y:THREE.MathUtils.lerp(meshRef.current.scale.y, 6.5, 0.1), z:1})
-    else if ((scale.x !== meshRef?.current.scale.x) || (scale.y !== meshRef?.current.scale.y)) setScale({x:THREE.MathUtils.lerp(meshRef.current.scale.x, 6.5, 0.1), y:THREE.MathUtils.lerp(meshRef.current.scale.y, 6.5, 0.1), z:1})
+    rot_worker.postMessage({objectID:'ALBUM', type:'BOUNCE', objectInfo:albumInfo})
 
-    setPosition([0, Math.sin(timer.current), 0])
+    // If the album is hovered over it'll expand over time for a smooth interaction    
+    if(hovered) {
+      rot_worker.postMessage({objectID:'ALBUM', type:'HOVER', objectInfo:albumInfo, refPosition:{x:mouse.x, y:mouse.y, z:5}})
+    } else rot_worker.postMessage({objectID:'ALBUM', type:'UNHOVER', objectInfo:albumInfo})
+
+    rot_worker.onmessage = (e) => {
+      const { objectID, objectInfo }:{objectID:string, objectInfo:SpaceInfo} = e.data
+      if(objectID=='ALBUM') setAlbumInfo(objectInfo)
+    }
   })
 
   return (
     <mesh
       {...props} // The properties passed automaticall
       ref={meshRef} // A reference to the object directly
-      scale={scale} // Scales it up if it's active
+      scale={albumInfo.scale} // Scales it up if it's active
       onClick={() => setActive(!active)} // Changes it's active state if it's clicked
       onPointerOver={() => setHover(true)} // This and one below track hovering
       onPointerOut={() => setHover(false)}
-      position={[positionX, positionY, positionZ]}>
+      position={albumInfo.position}>
       <planeGeometry args={[5, 5, 1]}/>
       <meshBasicMaterial map={albumTex}/>
     </mesh>
