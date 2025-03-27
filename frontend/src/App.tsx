@@ -307,7 +307,7 @@ function App() {
 
   // Fetch the prediction once after the pages mounts
   useEffect(() => {
-    fetch('http://127.0.0.1:5000/predict', {
+    fetch('https://6419-70-74-152-126.ngrok-free.app/predict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json'},
       body: JSON.stringify({ features: [0.6, 0.8, 0.3] }) // Fake data
@@ -324,7 +324,7 @@ function App() {
 
     // Every time a key is pressed, start the timer and display new results if it's been 300ms
     const timeout = setTimeout(() => {
-      fetch('http://172.26.141.32:5000/search', {
+      fetch('https://6419-70-74-152-126.ngrok-free.app/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({query: searchQuery})
