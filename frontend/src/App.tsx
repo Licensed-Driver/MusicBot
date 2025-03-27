@@ -5,10 +5,11 @@ import { Html } from '@react-three/drei'
 //import html2canvas from 'html2canvas' // Part of the HTML to canvas and plane stuff that is useful but not being used
 import'./App.css'
 
-import {SpaceInfo} from './workers/rotation_worker'
-import rotationWorker from './workers/rotation_worker?worker'
-
-const rot_worker = new rotationWorker()
+import {SpaceInfo, AddSimpVec} from './workers/rotation_worker'
+import './workers/rotation_worker'
+const rot_worker = new Worker(new URL('./workers/rotation_worker.ts', import.meta.url), {
+  type: 'module',
+})
 
 // This is a function that converts HTML to a canvas texture but I'm not using it and Vite doesn't like that (I'll use it in the future)
 /*const useDomToCanvas = (domEl:HTMLElement) => {
@@ -68,24 +69,21 @@ function Album({imgUrl, ...props}:any) {
   const [hovered, setHover] = useState(false)
   const [active, setActive] = useState(false)
 
-  // Get mouse position
-  const { mouse } = useThree()
-
   // Using a reference gives direct access to the mesh
   const meshRef = useRef<THREE.Mesh>(null!)
   // Lets us update the texture since it needs the texture to be constant and local
   const [albumTex, setTexture] = useState<THREE.Texture | null>(null)
+
+  const { camera, size, mouse } = useThree();
 
   useEffect(() => {
 
     // Load the new texture every time the url is changed
     loader.load(imgUrl, (loadedTexture) => {
       setTexture(loadedTexture)
-      const material = meshRef.current.material as THREE.MeshBasicMaterial
-      material.needsUpdate = true
+      console.log(imgUrl)
     })
 
-    console.log(imgUrl)
   }, [imgUrl])
   
   const [albumInfo, setAlbumInfo] = useState<SpaceInfo>({
@@ -102,11 +100,14 @@ function Album({imgUrl, ...props}:any) {
 
     timer.current += delta
 
+    let CursorWorldPosition = AddSimpVec(camera.position, {x:mouse.x, y:mouse.y, z:camera.position.z})
+    
+    rot_worker.postMessage({objectID:'ALBUM', type:'LOOK-AT', objectInfo:albumInfo, refPosition:CursorWorldPosition})
     rot_worker.postMessage({objectID:'ALBUM', type:'BOUNCE', objectInfo:albumInfo})
 
     // If the album is hovered over it'll expand over time for a smooth interaction    
     if(hovered) {
-      rot_worker.postMessage({objectID:'ALBUM', type:'HOVER', objectInfo:albumInfo, refPosition:{x:mouse.x, y:mouse.y, z:5}})
+      rot_worker.postMessage({objectID:'ALBUM', type:'HOVER', objectInfo:albumInfo,})
     } else rot_worker.postMessage({objectID:'ALBUM', type:'UNHOVER', objectInfo:albumInfo})
 
     rot_worker.onmessage = (e) => {
@@ -119,11 +120,13 @@ function Album({imgUrl, ...props}:any) {
     <mesh
       {...props} // The properties passed automaticall
       ref={meshRef} // A reference to the object directly
-      scale={albumInfo.scale} // Scales it up if it's active
+      scale={[albumInfo.scale.x, albumInfo.scale.y, albumInfo.scale.z]} // Scales it up if it's active
       onClick={() => setActive(!active)} // Changes it's active state if it's clicked
       onPointerOver={() => setHover(true)} // This and one below track hovering
       onPointerOut={() => setHover(false)}
-      position={albumInfo.position}>
+      position={[albumInfo.position.x, albumInfo.position.y, albumInfo.position.z]}
+      rotation={[albumInfo.rotation.x, albumInfo.rotation.y, albumInfo.rotation.z]}
+      >
       <planeGeometry args={[5, 5, 1]}/>
       <meshBasicMaterial map={albumTex}/>
     </mesh>
@@ -164,9 +167,9 @@ function SearchUI3D({
   setScreenPos: ({x, y}:{x:number, y:number}) => void
 }) {
 
-  const { camera, size } = useThree();
-
   const time = useRef(0)
+
+  const { camera, size, mouse } = useThree();
 
   useFrame((_, delta) => {
     // Store the position vector
@@ -304,7 +307,7 @@ function App() {
 
   // Fetch the prediction once after the pages mounts
   useEffect(() => {
-    fetch('https://d448-70-74-152-126.ngrok-free.app/predict', {
+    fetch('http://192.168.14.110/predict', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json'},
       body: JSON.stringify({ features: [0.6, 0.8, 0.3] }) // Fake data
@@ -321,7 +324,7 @@ function App() {
 
     // Every time a key is pressed, start the timer and display new results if it's been 300ms
     const timeout = setTimeout(() => {
-      fetch('https://d448-70-74-152-126.ngrok-free.app/search', {
+      fetch('http://192.168.14.110/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({query: searchQuery})
