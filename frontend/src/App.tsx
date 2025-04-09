@@ -364,6 +364,7 @@ function App() {
             <Route path={'/auth/callback'} element={<AuthCallback />} />
             <Route path="/spotifind" element={<></>} />
             <Route path="*" element={<RedirectHandler />} />
+            <Route path="" element={<RedirectHandler />} />
           </Routes>
         </BrowserRouter>
 
