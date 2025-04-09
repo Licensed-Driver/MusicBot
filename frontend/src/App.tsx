@@ -65,7 +65,7 @@ function RedirectHandler() {
   const allowedPath = '/spotifind'
   const spotifyCallback = '/auth/callback'
 
-  if (!location.pathname.startsWith(allowedPath) || !location.pathname.startswith(spotifyCallback)) {
+  if (!location.pathname.startsWith(allowedPath) || !location.pathname.startsWith(spotifyCallback)) {
     window.location.href = 'https://github.com/Licensed-Driver'
     return null // Don't render anything while redirecting
   }
