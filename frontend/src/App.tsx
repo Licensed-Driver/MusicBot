@@ -61,15 +61,16 @@ const title_worker = new Worker(new URL('./workers/title_worker.ts', import.meta
 };*/
 
 function RedirectHandler() {
-  const location = useLocation();
-  const allowedPath = '/spotifind';
+  const location = useLocation()
+  const allowedPath = '/spotifind'
+  const spotifyCallback = '/auth/callback'
 
-  if (!location.pathname.startsWith(allowedPath)) {
-    window.location.href = 'https://github.com/Licensed-Driver';
-    return null; // Don't render anything while redirecting
+  if (!location.pathname.startsWith(allowedPath) || !location.pathname.startswith(spotifyCallback)) {
+    window.location.href = 'https://github.com/Licensed-Driver'
+    return null // Don't render anything while redirecting
   }
 
-  return <Navigate to={allowedPath} />;
+  return <Navigate to={allowedPath} />
 }
 
 type song = {
@@ -361,7 +362,6 @@ function App() {
           <Routes>
             {/* A route to the callback React element for when spotify calls back localhost:5173 */}
             <Route path={'/auth/callback'} element={<AuthCallback />} />
-            <Route path='' element={<></>} />
             <Route path="/spotifind" element={<></>} />
             <Route path="*" element={<RedirectHandler />} />
           </Routes>
