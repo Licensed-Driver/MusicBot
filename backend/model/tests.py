@@ -2,6 +2,8 @@ import architecture as arch
 import torch
 from keras.api.datasets import mnist 
 
+# These are just some very basic unit tests to identify architecture problems during development
+
 testTensor = torch.Tensor([[3],[3]]).to('cuda')
 testOutTensor = torch.Tensor([[1238],[4328]]).to('cuda')
 def leaky(x):
@@ -15,17 +17,11 @@ def sigmoidDeriv(x):
     x.cuda()
     return torch.mul(x, (x-1))
 
-def softmax(x):
-    
-
 def linear(x):
     return x
 
 def linearDeriv(x):
     return torch.ones_like(x)
-
-def classLoss(x, y):
-
 
 (train_x, train_y), (test_x, test_y) = mnist.load_data()
 train_x = train_x.reshape(train_x.shape[0], train_x.shape[1] * train_x.shape[2])

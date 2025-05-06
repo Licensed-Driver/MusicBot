@@ -4,6 +4,10 @@ import torch.nn.functional as F
 import numpy as np
 from typing import Callable
 
+# THIS ARCHITECTURE IS OUTDATED AND CURRENTLY IN THE PROCESS OF BEING SUPERCEDED
+# This was the initial architecture that worked but was complicated and could be made much better
+# Especially when attempting to add convolutional layers to the model
+# It does work for regression tasks in limited testing, but some major complications (mainly in that it's too complicated) arose from attempting to use full-scale datasets for testing
 class NeuralNet():
     def __init__(self, input:torch.Tensor=None, input_dim=0, output_dim=1, samples=1, hidden_layers=0, neurons:list[int]=None, layer_activators:list[Callable[[torch.Tensor], torch.Tensor]]=None, layer_derivs:list[Callable[[torch.Tensor], torch.Tensor]]=None, loss_deriv:Callable[[torch.Tensor, torch.Tensor], torch.Tensor]=None, dtype=torch.float32):
 
