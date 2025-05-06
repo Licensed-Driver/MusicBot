@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Html, useTexture } from '@react-three/drei'
 //import html2canvas from 'html2canvas' // Part of the HTML to canvas and plane stuff that is useful but not being used
 import './App.css'
@@ -59,6 +59,19 @@ const title_worker = new Worker(new URL('./workers/title_worker.ts', import.meta
 
   return texture;
 };*/
+
+function RedirectHandler() {
+  const location = useLocation()
+  const allowedPath = '/spotifind'
+  const spotifyCallback = '/auth/callback'
+
+  if (!location.pathname.startsWith(allowedPath) || !location.pathname.startsWith(spotifyCallback)) {
+    window.location.href = 'https://github.com/Licensed-Driver'
+    return null // Don't render anything while redirecting
+  }
+
+  return <Navigate to={allowedPath} />
+}
 
 type song = {
   album: string,
@@ -349,7 +362,9 @@ function App() {
           <Routes>
             {/* A route to the callback React element for when spotify calls back localhost:5173 */}
             <Route path={'/auth/callback'} element={<AuthCallback />} />
-            <Route path='' element={<></>} />
+            <Route path="/spotifind" element={<></>} />
+            <Route path="*" element={<RedirectHandler />} />
+            <Route path="" element={<RedirectHandler />} />
           </Routes>
         </BrowserRouter>
 
